@@ -6,7 +6,7 @@
 
 1、我把嵌入式开发思路结合android启动流程梳理了一下
 
-![MacDown Screenshot](https://github.com/whsgzcy/weekly/blob/master/imgaes/kernel_android.png)
+![git clone](https://raw.githubusercontent.com/whsgzcy/Weekly/master/images/kernel_android.png)
 
 ```
 位于2位置，kernel层，主要是加载驱动和使能设备
