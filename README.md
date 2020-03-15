@@ -286,3 +286,95 @@ public class ComparedHandleService {
 
 }
 ```
+
+### 第二周 2020年3月16日
+
+前言
+
+做坏蛋要有结局会悲剧的觉悟
+
+1、手机插入USB HID HOST设备，读取数据时，以鼠标为例，如果usb上接入的为蓝牙，则此代码不生效
+
+```
+private final BroadcastReceiver mUsbDiskReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
+                Toast.makeText(MainActivity.this, "发现新设备", Toast.LENGTH_SHORT).show();
+            } else if (action.equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
+                mConnection = null;
+                FLAG_ = -1;
+                Toast.makeText(MainActivity.this, "拔出设备", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+```
+
+若插入有线usb鼠标，则上述代码生效，在android应用层 需要检查是否有读写的权限，
+
+```
+private final BroadcastReceiver mUsbPermissionActionReceiver = new BroadcastReceiver() {
+			public void onReceive(Context context, Intent intent) {
+					String action = intent.getAction();
+					if (ACTION_USB_PERMISSION.equals(action)) {
+							synchronized (this) {
+									UsbDevice usbDevice = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+									if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+											if (null != usbDevice) {
+													afterGetUsbPermission(usbDevice);
+											}
+									} else {
+											Toast.makeText(context, String.valueOf("Permission denied for device" + usbDevice), Toast.LENGTH_LONG).show();
+									}
+							}
+					}
+			}
+	};
+
+	然后才能执行
+
+	private void doYourOpenUsbDevice(UsbDevice usbDevice) {
+        //now follow line will NOT show: User has not given permission to device UsbDevice
+        mConnection = mUsbManager.openDevice(usbDevice);
+
+        Toast.makeText(MainActivity.this, "open device success1", Toast.LENGTH_SHORT).show();
+        mConnection.claimInterface(mInterface, true);
+        if (mInterface != null) {
+            for (int i = 0; i < mInterface.getEndpointCount(); i++) {
+
+                UsbEndpoint ep = mInterface.getEndpoint(i);
+
+                if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_INT) {
+                    if (ep.getDirection() == UsbConstants.USB_DIR_IN) {
+                        mInEndpoint = ep;
+                    }
+                }
+            }
+        }
+
+        FLAG_ = 1;
+    }
+
+		读取数据的方式有两种，
+
+		byte[] byte2 = new byte[16];
+	    mConnection.bulkTransfer(mInEndpoint, byte2, byte2.length, 3000)
+
+此方式读取的数据，有相当的延时，所以 不推荐使用，
+
+			int inMax = mInEndpoint.getMaxPacketSize();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(inMax);
+       	 UsbRequest usbRequest = new UsbRequest();
+				 usbRequest.initialize(mConnection, mInEndpoint);
+				 usbRequest.queue(byteBuffer, inMax);
+				 if (mConnection.requestWait() == usbRequest) {
+					 byte[] retData = byteBuffer.array();
+					 StringBuffer sb = new StringBuffer();
+					 for (Byte byte1 : retData) {
+						 System.err.println(byte1);
+						 sb.append(byte1);
+					 }
+
+```
+
+对于读取设备数据的方式，我想 设备数据都是通过jni反射到java层，那么，在现有的api里面有没有这样的方式，不需要通过循环，
