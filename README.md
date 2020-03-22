@@ -1,3 +1,204 @@
+### 第三周 2020年3月23日
+
+前言
+
+永不背叛，王者背负，王者审判，王者不可阻挡
+
+1、有这么一个场景，手机屏幕竖直方向倒置，普通的方法
+
+```
+ActivityInfo.SCREEN_xxx
+
+等，只能设置 横屏与 正向竖屏
+
+其他设置均不生效，就不要白费功夫了，
+
+生效的方案有，
+
+xxx.setScaleX(-1)
+
+还有 封装一个Animation将 动画后的效果保存
+
+建议使用setScaleX
+```
+
+2、DrawerLayout 与 fragment 滑动控件冲突问题
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <RelativeLayout
+        android:id="@+id/menu_layout"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:layout_alignParentBottom="true">
+
+      xxx
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/menu_layout" />
+
+    <androidx.drawerlayout.widget.DrawerLayout
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+      xxxx
+
+    </androidx.drawerlayout.widget.DrawerLayout>
+
+</RelativeLayout>
+
+这种情况 fragment的滑动控件将不生效，将DrawerLayout 与FrameLayout 互换位置，fragment是可以滑动的，但是，侧滑栏会被遮盖
+
+解决方案如下
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+      xxxxx
+
+        <FrameLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/menu_layout" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="160dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right">
+
+        <LinearLayout
+            android:id="@+id/menu_container"
+            android:layout_width="160dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right"
+            android:background="#eeeeee"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+</androidx.drawerlayout.widget.DrawerLayout>
+
+```
+
+
+### 第二周 2020年3月16日
+
+前言
+
+做坏蛋要有结局会悲剧的觉悟
+
+1、手机插入USB HID HOST设备，读取数据时，以鼠标为例，如果usb上接入的为蓝牙，则此代码不生效
+
+```
+private final BroadcastReceiver mUsbDiskReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
+                Toast.makeText(MainActivity.this, "发现新设备", Toast.LENGTH_SHORT).show();
+            } else if (action.equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
+                mConnection = null;
+                FLAG_ = -1;
+                Toast.makeText(MainActivity.this, "拔出设备", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+```
+
+若插入有线usb鼠标，则上述代码生效，在android应用层 需要检查是否有读写的权限，
+
+```
+private final BroadcastReceiver mUsbPermissionActionReceiver = new BroadcastReceiver() {
+			public void onReceive(Context context, Intent intent) {
+					String action = intent.getAction();
+					if (ACTION_USB_PERMISSION.equals(action)) {
+							synchronized (this) {
+									UsbDevice usbDevice = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+									if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+											if (null != usbDevice) {
+													afterGetUsbPermission(usbDevice);
+											}
+									} else {
+											Toast.makeText(context, String.valueOf("Permission denied for device" + usbDevice), Toast.LENGTH_LONG).show();
+									}
+							}
+					}
+			}
+	};
+
+	然后才能执行
+
+	private void doYourOpenUsbDevice(UsbDevice usbDevice) {
+        //now follow line will NOT show: User has not given permission to device UsbDevice
+        mConnection = mUsbManager.openDevice(usbDevice);
+
+        Toast.makeText(MainActivity.this, "open device success1", Toast.LENGTH_SHORT).show();
+        mConnection.claimInterface(mInterface, true);
+        if (mInterface != null) {
+            for (int i = 0; i < mInterface.getEndpointCount(); i++) {
+
+                UsbEndpoint ep = mInterface.getEndpoint(i);
+
+                if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_INT) {
+                    if (ep.getDirection() == UsbConstants.USB_DIR_IN) {
+                        mInEndpoint = ep;
+                    }
+                }
+            }
+        }
+
+        FLAG_ = 1;
+    }
+
+		读取数据的方式有两种，
+
+		byte[] byte2 = new byte[16];
+	    mConnection.bulkTransfer(mInEndpoint, byte2, byte2.length, 3000)
+
+此方式读取的数据，有相当的延时，所以 不推荐使用，
+
+			int inMax = mInEndpoint.getMaxPacketSize();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(inMax);
+       	 UsbRequest usbRequest = new UsbRequest();
+				 usbRequest.initialize(mConnection, mInEndpoint);
+				 usbRequest.queue(byteBuffer, inMax);
+				 if (mConnection.requestWait() == usbRequest) {
+					 byte[] retData = byteBuffer.array();
+					 StringBuffer sb = new StringBuffer();
+					 for (Byte byte1 : retData) {
+						 System.err.println(byte1);
+						 sb.append(byte1);
+					 }
+
+```
+
+对于读取设备数据的方式，我想 设备数据都是通过jni反射到java层，那么，在现有的api里面有没有这样的方式，不需要通过循环，
+
 ### 第一周 2020年3月8日
 
 前言
@@ -286,95 +487,3 @@ public class ComparedHandleService {
 
 }
 ```
-
-### 第二周 2020年3月16日
-
-前言
-
-做坏蛋要有结局会悲剧的觉悟
-
-1、手机插入USB HID HOST设备，读取数据时，以鼠标为例，如果usb上接入的为蓝牙，则此代码不生效
-
-```
-private final BroadcastReceiver mUsbDiskReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-                Toast.makeText(MainActivity.this, "发现新设备", Toast.LENGTH_SHORT).show();
-            } else if (action.equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-                mConnection = null;
-                FLAG_ = -1;
-                Toast.makeText(MainActivity.this, "拔出设备", Toast.LENGTH_SHORT).show();
-            }
-        }
-    };
-```
-
-若插入有线usb鼠标，则上述代码生效，在android应用层 需要检查是否有读写的权限，
-
-```
-private final BroadcastReceiver mUsbPermissionActionReceiver = new BroadcastReceiver() {
-			public void onReceive(Context context, Intent intent) {
-					String action = intent.getAction();
-					if (ACTION_USB_PERMISSION.equals(action)) {
-							synchronized (this) {
-									UsbDevice usbDevice = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-									if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-											if (null != usbDevice) {
-													afterGetUsbPermission(usbDevice);
-											}
-									} else {
-											Toast.makeText(context, String.valueOf("Permission denied for device" + usbDevice), Toast.LENGTH_LONG).show();
-									}
-							}
-					}
-			}
-	};
-
-	然后才能执行
-
-	private void doYourOpenUsbDevice(UsbDevice usbDevice) {
-        //now follow line will NOT show: User has not given permission to device UsbDevice
-        mConnection = mUsbManager.openDevice(usbDevice);
-
-        Toast.makeText(MainActivity.this, "open device success1", Toast.LENGTH_SHORT).show();
-        mConnection.claimInterface(mInterface, true);
-        if (mInterface != null) {
-            for (int i = 0; i < mInterface.getEndpointCount(); i++) {
-
-                UsbEndpoint ep = mInterface.getEndpoint(i);
-
-                if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_INT) {
-                    if (ep.getDirection() == UsbConstants.USB_DIR_IN) {
-                        mInEndpoint = ep;
-                    }
-                }
-            }
-        }
-
-        FLAG_ = 1;
-    }
-
-		读取数据的方式有两种，
-
-		byte[] byte2 = new byte[16];
-	    mConnection.bulkTransfer(mInEndpoint, byte2, byte2.length, 3000)
-
-此方式读取的数据，有相当的延时，所以 不推荐使用，
-
-			int inMax = mInEndpoint.getMaxPacketSize();
-            ByteBuffer byteBuffer = ByteBuffer.allocate(inMax);
-       	 UsbRequest usbRequest = new UsbRequest();
-				 usbRequest.initialize(mConnection, mInEndpoint);
-				 usbRequest.queue(byteBuffer, inMax);
-				 if (mConnection.requestWait() == usbRequest) {
-					 byte[] retData = byteBuffer.array();
-					 StringBuffer sb = new StringBuffer();
-					 for (Byte byte1 : retData) {
-						 System.err.println(byte1);
-						 sb.append(byte1);
-					 }
-
-```
-
-对于读取设备数据的方式，我想 设备数据都是通过jni反射到java层，那么，在现有的api里面有没有这样的方式，不需要通过循环，
