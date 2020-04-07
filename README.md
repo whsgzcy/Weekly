@@ -1,3 +1,138 @@
+### 第五周 2020年4月7日
+
+前言
+
+给予破坏者正确的绝望
+
+1、有这么一个场景，王者荣耀游戏进行热更，我们把新的文件提取出来，放置到其他设备对应的路径下，那其他设备就不需要再去热更，100台设备，可以这么操作，那么10000台呢？两天两夜，如果硬盘性能还不是很好的情况下，大批量的去mount的地址去拉数据，并发数再设置不当，就会出现卡死，而且，卡死的原因可能不止是软件层面的问题，还有硬件层面的问题
+
+```
+方案进展
+
+1、王者荣耀热更时的检测
+
+我尝试过以下方案
+
+a、抓包
+很可惜，大厂的游戏这块都是严格加密过的，pass
+
+b、分析当前的进程，找到当前热更的子进程
+没找到，pass
+
+c、反编译
+想多了，pass
+
+d、抓取增量
+我想找到这方面的增量文件，找了很多很多，对比也很多很多，pass
+
+e、图像识别
+我看可行，然，需求还没有到这地步，pass
+
+那么，对于大文件，大量的热更处理是怎样处理的呢？
+
+我只能分享思路，
+
+a、拿一台设备具体分析当前热更的大小，时间，下载速度，以及分析当前带宽
+
+b、拿50台设备，具体分析当前热更时间，已经那段时间的带框
+
+c、上述如果都在预期之内，则设置并发，休眠时间
+
+d、最终测试，10000台设备，3.3小时搞定
+
+这种方式还是会产生大量的流量，只是过渡方案，或者是出现问题的保底方案
+
+最终方案设想，准备一个非常非常非常牛逼的硬盘，10000个设备，1000个一组，将存档路径指向那个地址即可
+
+```
+
+2、游戏奔溃处理
+
+```
+我们都知道，sharedpreferences，只是对应目录下的xml，我们通过增量的方式将文件取出来，进行对比，其实这个问题是有难度的，但解决起来不难，比较难定位这个问题，因为游戏奔溃只能看到log，所以，我认为有些莫名其妙的问题肯定是细节问题，不能大刀阔斧，否则很累。
+
+```
+
+3、HextoStr
+
+```
+这个代码要记得，网上一大片都是垃圾
+
+//16进制字符串转换为byte[]
+    public static byte[] HexToByte(String hexString) {
+        int len = hexString.length();
+        byte[] b = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            // 两位一组，表示一个字节,把这样表示的16进制字符串，还原成一个字节
+            b[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4) + Character
+                    .digit(hexString.charAt(i + 1), 16));
+        }
+        return b;
+    }
+```
+
+4、倒置时，滑动的处理
+
+```
+这是一段 向右滑动的代码，根据偏移量实时绘制托条位置，但现在的需求是，手机竖直方向倒置，手机放过来，在源码基础上，我找到这块代码，分析
+
+从左向右，即自增，比如
+0 1 2 3
+倒置之后，即自减，比如
+3 2 1 0
+
+只修改了，
+//mDistanceX = event.getRawX() - mDownX;
+  mDistanceX = mDownX - event.getRawX();
+
+...
+@Override
+        public boolean onTouchEvent(MotionEvent event) {
+            if (mEnable) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    // 记录手指按下时SlideIcon的X坐标
+                    mDownX = event.getRawX();
+                    return true;
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    // 设置手指松开时SlideIcon的X坐标
+                    mDownX = 0;
+                    mX = mX + mDistanceX;
+                    mDistanceX = 0;
+                    // 触发松开回调并传入当前SlideIcon的X坐标
+                    if (listener != null) {
+                        listener.onActionUp((int) mX);
+                    }
+                    return true;
+                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    // 记录SlideIcon在X轴上的拖动距离
+//                    mDistanceX = event.getRawX() - mDownX;
+                    mDistanceX = mDownX - event.getRawX();
+                    // 触发拖动回调并传入当前SlideIcon的拖动距离
+                    if (listener != null) {
+                        listener.onActionMove((int) mDistanceX);
+                    }
+                    return true;
+                }
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+...
+```
+
+5、计划
+
+```
+HID设备程序调试，本周一定得拿出10个小时时间，专注在这方面，
+
+```
+
+### 第四周 2020年3月31日
+
+pass
+
 ### 第三周 2020年3月23日
 
 前言
