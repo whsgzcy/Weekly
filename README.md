@@ -1,3 +1,131 @@
+### 第七周 2020年4月21日
+
+前言
+
+观今夜星象 知天下大事
+
+1、二分法的巧妙运用
+
+```
+在这里我只能分享思路，分享需求的话不合适，当我们从一堆sharedpreferencesd的xml文件中找出自己想要的，比如调试qq或者微信，那么可以用二分法来调试，到此就不能再具体了
+
+有一串shell脚本，得在这里备注一下，因为网上都是乱七八糟的东西，自己都没调试过就放上去
+
+find /xxx/xxx/xxx -type f -not -name 'xxx.xxx' -not -name 'xxx.xxx' | xargs rm
+```
+
+2、tcpip wifi
+
+```
+说是四次交互，但实际是五次，其实我不理解这个，但到kernel这层的时候，我是可以理解的
+
+我们都知道 是否连接到外网 通过ping的方式，但ping实际等的是pong，他有一个超时时间，例如200ms，做递减，此时包的协议是逐步增加的，也就是在每一层长度都是增加的，然后包回来的时候匹配到对应的路径下去，得到延时时间
+```
+
+3、Ubuntu安装vbox(VM)
+
+```
+注意，这个是个巨坑！！！
+
+现象，我们安装好vbox之后，再去安装虚拟机，Ubuntu或者Windows，会出现这样一个错，
+
+***************** ******************** ********************* ***************
+Kernel driver not installed (rc=-1908)
+
+The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv.
+Please reinstall the kernel module by executing
+
+'/sbin/vboxconfig'
+
+as root
+
+where:sulibOslnit what:3
+
+xxxxx
+xxxxx
+**************** ******************** ********************** ***************
+
+这个，网上乱七八糟的东西一大堆，我想诺诺的问一句，你们自己验证过吗？
+
+我们从这个应用的log可以看出:
+
+***************** ******************** ********************* ***************
+vboxdrv:
+Running module version sanity check.
+ -Origin module
+  -No origin module exists within this kernel
+ -Installation
+  -Installation to /lib/modules/4.15.0-45-generic/updates/dkms
+
+vboxnetadp.ko:
+Running module version sanity check.
+ -Origin module
+  -No origin module exists within this kernel
+  -Installation
+   -Installation to /lib/modules/4.15.0-45-generic/updates/dkms
+
+vboxnetflt.ko:
+Running module version sanity check.
+ -Origin module
+  -No origin module exists within this kernel
+  -Installation
+  -Installation to /lib/modules/4.15.0-45-generic/updates/dkms
+
+vboxpci.ko:
+Running module version sanity check.
+ -Origin module
+  -No origin module exists within this kernel
+  -Installation
+  -Installation to /lib/modules/4.15.0-45-generic/updates/dkms
+
+  ...
+
+depmod.....
+
+DKMS: install completed.
+
+他明显就是缺少驱动啊，在Ubuntu下处理这个问题的最好方式是：
+
+sudo apt-get -y install virtualbox
+
+***************** ******************** ********************* ***************
+
+```
+
+4、记录一串shell脚本，特别容易出错
+
+```
+result=`ssh $HOSTCHECK $IP 'xxx xxx xxx'`
+#echo $result
+
+// 此时的if 如果少了一个空格都会出错，切记
+if [ -n "$result" ] && [ "null" != "$result" ]
+then
+        echo "$IP" ";yes;"  "$result"
+  else
+        echo "$IP" ";no"
+fi
+```
+
+5、与代码无关的东西
+
+```
+三年前我爽在专业面前教过我
+
+stay hungry stay foolish
+
+解释：在专业面前保持敬畏
+
+三年后，我爽在感情方面教我
+
+一期一会
+```
+
+6、与代码有关的东西
+```
+绝不能容忍bug
+```
+
 ### 第六周 2020年4月14日
 
 前言
