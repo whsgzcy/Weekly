@@ -1,3 +1,155 @@
+### 第八周 2020年4月26日
+
+前言
+
+仿佛兮若轻云之蔽月 飘摇兮若流风之回雪
+
+1、Opengrok 搭建
+
+如果你的jdk是1.7的话，那你就来对了，相信我，接下来的内容会让你满足的
+
+Ubuntu 16.04
+
+jdk 1.7
+
+Opengrok 0.11.1
+
+Tomcat apache-tomcat-7.0.40
+
+|
+
+|
+
+|
+
+|
+
+是不是找不到Opengrok的0.11.1版本(已在本库附件中)，就算wget到了，也是没办法解压的，这个在release里面已经找不到了，这个也花了我很多时间，看release的描述，在0.12*找，然则不行，快一点的就是先用jdk1.8的环境先跑起来，这样也可以，网上的那些博客还是有很多胡说八道的。
+
+```
+1、首先是下载 Tomcat apache-tomcat-7.0.40
+
+# mkdir ~/Tomcat
+# cd ~/Tomcat
+# sudo tar zxvf apache-tomcat-7.0.40.tar.gz
+# sudo chmod -R 777 ~/Tomcat/apache-tomcat-7.0.40/bin/*
+
+//启动tomcat
+# sudo ~/Tomcat/apache-tomcat-7.0.40/bin/startup.sh
+
+// 在浏览器输入
+http://localhsot:8080
+会有Tomcat的经典页面
+
+2、安装opengrok
+
+opengrok-0.11.1.tar.gz 官网已经找不到了，我费了很大力气才从外网找到
+
+# mkdir ~/Opengrok
+# cd ~/Opengrok
+# sudo tar zxvf opengrok-0.11.1.tar.gz
+# sudo chmod -R 777 ~/Opengrok/opengrok-0.11.1/lib/*
+
+//将open里的一个文件 cp 至 Tomcat路径下
+
+# cp ~/Opengrok/opengrok-0.11.1/lib/source.war ~/Tomcat/apache-tomcat-7.0.40/webapps/
+
+// 在浏览器输入
+http://localhsot:8080/source
+会有搜索页面
+
+3、配置web.xml
+
+<description>A wicked fast source browser</description>
+  <context-param>
+    <param-name>CONFIGURATION</param-name>
+    // 此处需要修改 xml 之前换成opengrok的地址
+    <param-value>/home/zcy/opengrok/opengrok-0.11.1/etc/configuration.xml</param-value>
+    <description>Full path to the configuration file where OpenGrok can read it's configuration</description>
+</context-param>
+
+4、./opengrok deloy
+
+# cd /home/zcy/opengrok/opengrok-0.11.1/bin
+# sudo OPENGROK_TOMCAT_BASE=~/tomcat/apache-tomcat-7.0.40/ ./OpenGrok deploy
+
+到这步如果没有任何错的话，就可以建立索引了，我花了一个小时吧
+
+# sudo ./OpenGrop index <source code path>
+
+Loading the default instance configuration ...
+
+至此配置完成
+
+参考博客链接：
+https://blog.csdn.net/luzhenrong45/article/details/52734781
+https://blog.csdn.net/wyw594/article/details/50094097
+```
+
+2、firefly android5.1 源码编译
+
+在编译这份源码之前，都编译过，但记录的不是很清楚，时间一长，forgot，还是花了一些力气的，在此记录一下
+
+```
+Ubuntu 16.04
+
+# 官网只提供了12.04和14.04平台的编译环境，但在我的9代cpu的台式机上 显卡会不起作用，is too old，难以忍受，官网提供的环境不能编译，此处有坑，勿踩
+
+1、openjdk-7-jdk
+sudo add-apt-repository ppa:openjdk-r/ppa
+sudo apt-get update
+sudo apt-get install openjdk-7-jdk  // OpenJdk 7安装：
+
+2、需要的包
+sudo apt-get install git-core gnupg flex bison gperf build-essential \
+  zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
+  lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache \
+  libgl1-mesa-dev libxml2-utils xsltproc unzip
+
+sudo apt-get install lzop
+
+# 附带 需要装以下包
+
+sudo apt-get install gitk meld vim ssh wireshark
+sudo apt-get install minicom
+
+3、常见问题
+
+# 如果出现 dexoat.0 failed 等等
+
+需要做如下修改
+
+cd  <source_android>/art/build/
+vim Android.common_build.mk    //修改第119行
+修改前：
+# Host.
+ART_HOST_CLANG := false
+ifneq ($(WITHOUT_HOST_CLANG),true)
+# By default, host builds use clang for better warnings.
+ART_HOST_CLANG := true
+endif
+修改后：
+# Host.
+ART_HOST_CLANG := false
+```
+
+4、git的正确操作
+
+对git又一次刷新了我的认知，这样做会很有效的进行代码管理，而且可追溯
+```
+待完善
+
+1、尽可能的保证一次提交解决问题
+
+2、解决一个问题就在一个提交记录上进行操作，否则后面胡很乱
+
+3、每一次提交都要遵循模板
+
+4、提交给测试进行测试，需要注明在xxx之后可测等等
+
+5、需要身边的同事给你代码+1，后面合入之前，需要进行+2
+```
+
 ### 第七周 2020年4月21日
 
 前言
