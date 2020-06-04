@@ -1,3 +1,308 @@
+### 第十周 2020年5月10日
+
+最近在解决一个问题，这个问题真的把我难住了，但同时我也看见了新的东西，让我有点兴奋~
+
+需求：
+
+1、绕开android的全局弹窗权限，参考竞品如下：
+
+```
+链接:https://pan.baidu.com/s/1aMUSQCHhjF-cUavIwSW2LQ  密码:csog
+
+可以说明一下，截止到2020年5月，百度和Google都没有，连思路都没有啊，网上的一些博客写的比如修改什么TYPE_TOAST，都可以跳过，没有任何参考价值，
+
+不过可以Google“反射 绕开android 权限 反射”，还是有点思路的
+
+```
+
+知识点熟悉：
+
+1、必须知道什么是代理模式
+```
+
+```
+
+2、必须知道，这一整个代码的过程
+```
+|
+|
+|
+WindowManager windowManager = (WindowManager) getApplication().getSystemService(getApplication().WINDOW_SERVICE);
+
+到
+
+addView(view, layoutXXX);
+```
+
+参考链接：
+
+```
+http://www.blogjava.net/lihao336/archive/2010/11/24/338962.html
+
+http://androidxref.com/8.1.0_r33/xref/
+```
+
+反编译apk
+```
+链接:https://pan.baidu.com/s/1Ik1xj3oIA4-Q5EHDiw7WAw  密码:qy2c
+```
+
+从反编译的apk代码中可参考的代码：
+```
+
+// 第一段
+package com.twentytwograms.app.libraries.channel;
+
+import android.content.Context;
+import android.view.WindowManager;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+
+/* compiled from: WindowManagerProxy */
+final class WindowManagerProxy {
+    WindowManagerProxy() {
+    }
+
+    /* renamed from: a */
+    public static WindowManager m29571a(Context context) {
+        WindowManager windowManager = (WindowManager) context.getApplicationContext().getSystemService("window");
+        Object a = m29572a(windowManager);
+        if (a == null) {
+            return windowManager;
+        }
+        Object a2 = m29573a(a);
+        if (a2 == null) {
+            return windowManager;
+        }
+        Object newProxyInstance = Proxy.newProxyInstance(a2.getClass().getClassLoader(), a2.getClass().getInterfaces(), new brt(a2));
+        try {
+            Field declaredField = a.getClass().getDeclaredField("sWindowSession");
+            if (declaredField != null) {
+                declaredField.setAccessible(true);
+                declaredField.set(a, newProxyInstance);
+            }
+        } catch (Exception unused) {
+        }
+        return windowManager;
+    }
+
+    /* renamed from: a */
+    private static Object m29572a(WindowManager windowManager) {
+        try {
+            Field declaredField = windowManager.getClass().getDeclaredField("mGlobal");
+            if (declaredField != null) {
+                declaredField.setAccessible(true);
+                Object obj = declaredField.get(windowManager);
+                if (obj != null) {
+                    return obj;
+                }
+            }
+        } catch (Exception unused) {
+        }
+        return null;
+    }
+
+    /* renamed from: a */
+    private static Object m29573a(Object obj) {
+        try {
+            obj.getClass().getMethod("getWindowSession", new Class[0]).invoke(null, new Object[0]);
+            Field declaredField = obj.getClass().getDeclaredField("sWindowSession");
+            if (declaredField != null) {
+                declaredField.setAccessible(true);
+                Object obj2 = declaredField.get(obj);
+                if (obj2 != null) {
+                    return obj2;
+                }
+            }
+        } catch (Exception unused) {
+        }
+        return null;
+    }
+
+    /* renamed from: a */
+    private static void m29574a(Object obj, Object obj2) {
+        try {
+            Field declaredField = obj.getClass().getDeclaredField("sWindowSession");
+            if (declaredField != null) {
+                declaredField.setAccessible(true);
+                declaredField.set(obj, obj2);
+            }
+        } catch (Exception unused) {
+        }
+    }
+}
+
+// 第二段
+
+package com.twentytwograms.app.libraries.channel;
+
+import android.view.WindowManager.LayoutParams;
+import com.meizu.cloud.pushsdk.constants.PushConstants;
+import java.lang.reflect.InvocationHandler;
+
+/* compiled from: WindowManagerProxy */
+final class brt implements InvocationHandler {
+
+    /* renamed from: a */
+    private Object f20531a;
+
+    public brt(Object obj) {
+        this.f20531a = obj;
+    }
+
+    /* renamed from: a */
+    private static void m29575a(Object[] objArr) {
+        if (objArr != null) {
+            try {
+                if (objArr.length > 3 && (objArr[2] instanceof LayoutParams)) {
+                    LayoutParams layoutParams = objArr[2];
+                    if (layoutParams.type == 2003) {
+                        layoutParams.type = PushConstants.NOTIFICATION_SERVICE_SEND_MESSAGE_BROADCAST;
+                    }
+                }
+            } catch (Exception unused) {
+            }
+        }
+    }
+
+    /* renamed from: b */
+    private static void m29576b(Object[] objArr) {
+        if (objArr != null) {
+            try {
+                if (objArr.length > 3 && (objArr[2] instanceof LayoutParams)) {
+                    LayoutParams layoutParams = objArr[2];
+                    if (layoutParams.type == 2003) {
+                        layoutParams.type = PushConstants.NOTIFICATION_SERVICE_SEND_MESSAGE_BROADCAST;
+                    }
+                }
+            } catch (Exception unused) {
+            }
+        }
+    }
+
+    /* JADX WARNING: Can't wrap try/catch for region: R(7:0|(3:3|4|(2:8|(1:10)))|11|(3:15|16|(2:20|(1:22)))|23|24|25) */
+    /* JADX WARNING: Code restructure failed: missing block: B:28:0x004c, code lost:
+        return null;
+     */
+    /* JADX WARNING: Failed to process nested try/catch */
+    /* JADX WARNING: Missing exception handler attribute for start block: B:23:0x0044 */
+    /* Code decompiled incorrectly, please refer to instructions dump. */
+    public final java.lang.Object invoke(java.lang.Object r7, java.lang.reflect.Method r8, java.lang.Object[] r9) {
+        /*
+            r6 = this;
+            java.lang.String r7 = r8.getName()
+            java.lang.String r0 = "addToDisplay"
+            boolean r0 = r0.equals(r7)
+            r1 = 2005(0x7d5, float:2.81E-42)
+            r2 = 2003(0x7d3, float:2.807E-42)
+            r3 = 3
+            r4 = 2
+            if (r0 == 0) goto L_0x0027
+            if (r9 == 0) goto L_0x0027
+            int r0 = r9.length     // Catch:{ Exception -> 0x0027 }
+            if (r0 <= r3) goto L_0x0027
+            r0 = r9[r4]     // Catch:{ Exception -> 0x0027 }
+            boolean r0 = r0 instanceof android.view.WindowManager.LayoutParams     // Catch:{ Exception -> 0x0027 }
+            if (r0 == 0) goto L_0x0027
+            r0 = r9[r4]     // Catch:{ Exception -> 0x0027 }
+            android.view.WindowManager$LayoutParams r0 = (android.view.WindowManager.LayoutParams) r0     // Catch:{ Exception -> 0x0027 }
+            int r5 = r0.type     // Catch:{ Exception -> 0x0027 }
+            if (r5 != r2) goto L_0x0027
+            r0.type = r1     // Catch:{ Exception -> 0x0027 }
+        L_0x0027:
+            java.lang.String r0 = "relayout"
+            boolean r7 = r0.equals(r7)
+            if (r7 == 0) goto L_0x0044
+            if (r9 == 0) goto L_0x0044
+            int r7 = r9.length     // Catch:{ Exception -> 0x0044 }
+            if (r7 <= r3) goto L_0x0044
+            r7 = r9[r4]     // Catch:{ Exception -> 0x0044 }
+            boolean r7 = r7 instanceof android.view.WindowManager.LayoutParams     // Catch:{ Exception -> 0x0044 }
+            if (r7 == 0) goto L_0x0044
+            r7 = r9[r4]     // Catch:{ Exception -> 0x0044 }
+            android.view.WindowManager$LayoutParams r7 = (android.view.WindowManager.LayoutParams) r7     // Catch:{ Exception -> 0x0044 }
+            int r0 = r7.type     // Catch:{ Exception -> 0x0044 }
+            if (r0 != r2) goto L_0x0044
+            r7.type = r1     // Catch:{ Exception -> 0x0044 }
+        L_0x0044:
+            java.lang.Object r6 = r6.f20531a     // Catch:{ Exception -> 0x004b }
+            java.lang.Object r6 = r8.invoke(r6, r9)     // Catch:{ Exception -> 0x004b }
+            return r6
+        L_0x004b:
+            r6 = 0
+            return r6
+        */
+        throw new UnsupportedOperationException("Method not decompiled: com.twentytwograms.app.libraries.channel.brt.invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[]):java.lang.Object");
+    }
+}
+
+```
+
+其中的第二段代码，需要结合smile去还原这块的代码，在此哥没有还原出来，
+```
+/* JADX WARNING: Failed to process nested try/catch */
+/* JADX WARNING: Missing exception handler attribute for start block: B:23:0x0044 */
+/* Code decompiled incorrectly, please refer to instructions dump. */
+
+/*
+    r6 = this;
+    java.lang.String r7 = r8.getName()
+    java.lang.String r0 = "addToDisplay"
+    boolean r0 = r0.equals(r7)
+    r1 = 2005(0x7d5, float:2.81E-42)
+    r2 = 2003(0x7d3, float:2.807E-42)
+    r3 = 3
+    r4 = 2
+    if (r0 == 0) goto L_0x0027
+    if (r9 == 0) goto L_0x0027
+    int r0 = r9.length     // Catch:{ Exception -> 0x0027 }
+    if (r0 <= r3) goto L_0x0027
+    r0 = r9[r4]     // Catch:{ Exception -> 0x0027 }
+    boolean r0 = r0 instanceof android.view.WindowManager.LayoutParams     // Catch:{ Exception -> 0x0027 }
+    if (r0 == 0) goto L_0x0027
+    r0 = r9[r4]     // Catch:{ Exception -> 0x0027 }
+    android.view.WindowManager$LayoutParams r0 = (android.view.WindowManager.LayoutParams) r0     // Catch:{ Exception -> 0x0027 }
+    int r5 = r0.type     // Catch:{ Exception -> 0x0027 }
+    if (r5 != r2) goto L_0x0027
+    r0.type = r1     // Catch:{ Exception -> 0x0027 }
+L_0x0027:
+    java.lang.String r0 = "relayout"
+    boolean r7 = r0.equals(r7)
+    if (r7 == 0) goto L_0x0044
+    if (r9 == 0) goto L_0x0044
+    int r7 = r9.length     // Catch:{ Exception -> 0x0044 }
+    if (r7 <= r3) goto L_0x0044
+    r7 = r9[r4]     // Catch:{ Exception -> 0x0044 }
+    boolean r7 = r7 instanceof android.view.WindowManager.LayoutParams     // Catch:{ Exception -> 0x0044 }
+    if (r7 == 0) goto L_0x0044
+    r7 = r9[r4]     // Catch:{ Exception -> 0x0044 }
+    android.view.WindowManager$LayoutParams r7 = (android.view.WindowManager.LayoutParams) r7     // Catch:{ Exception -> 0x0044 }
+    int r0 = r7.type     // Catch:{ Exception -> 0x0044 }
+    if (r0 != r2) goto L_0x0044
+    r7.type = r1     // Catch:{ Exception -> 0x0044 }
+L_0x0044:
+    java.lang.Object r6 = r6.f20531a     // Catch:{ Exception -> 0x004b }
+    java.lang.Object r6 = r8.invoke(r6, r9)     // Catch:{ Exception -> 0x004b }
+    return r6
+L_0x004b:
+    r6 = 0
+    return r6
+*/
+
+```
+
+
+
+从上述代码中可以看出，
+```
+是先获取WindowManager代理对象
+
+```
+
+### 第九周 2020年5月3日
+
+pass
+
 ### 第八周 2020年4月26日
 
 前言
